@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.9;
 
 contract CampaignFactory {
     Campaign[] public deployedCampaigns;
@@ -36,7 +36,7 @@ contract Campaign {
         _;
     }
 
-    constructor(uint256 minimum, address creator) public {
+    constructor(uint256 minimum, address creator) {
         manager = creator;
         minimumContribution = minimum;
     }
@@ -54,16 +54,12 @@ contract Campaign {
         address payable recipient
     ) public restricted {
         // creates a new instance of type Request
-        Request memory newRequest = Request({
-            description: description,
-            value: value,
-            recipient: recipient,
-            complete: false,
-            approvalCount: 0
-        });
-
-        // pushes the new request to the requests array
-        requests.push(newRequest);
+        Request storage newRequest = requests.push();
+        newRequest.description = description;
+        newRequest.value = value;
+        newRequest.recipient = recipient;
+        newRequest.complete = false;
+        newRequest.approvalCount = 0;
     }
 
     function approveRequest(uint256 index) public {
@@ -93,5 +89,29 @@ contract Campaign {
         request.recipient.transfer(request.value);
         // finalize the request
         request.complete = true;
+    }
+
+    function getSummary()
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            address
+        )
+    {
+        return (
+            minimumContribution,
+            address(this).balance,
+            requests.length,
+            approversCount,
+            manager
+        );
+    }
+
+    function getRequestsCount() public view returns (uint256) {
+        return requests.length;
     }
 }
